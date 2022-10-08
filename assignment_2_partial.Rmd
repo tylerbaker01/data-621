@@ -1,0 +1,122 @@
+---
+title: "data621- hw2"
+author: "Tyler Baker"
+date: '2022-10-08'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(pROC)
+library(tidyverse)
+```
+
+# HW 2
+
+## Step 1
+Download the classification output dataset.
+
+```{r}
+data <- read.csv("C:\\Users\\tyler\\Downloads\\DATA 621\\classification-output-data.csv")
+```
+
+## Step 2
+The dataset has three key columns we will use:
+  1. class
+  2. scored.class
+  3. scored.probability
+Use the table() function to get the raw confusion matrix for this scored dataset.
+
+```{r}
+data<- data[,c(9:11)]
+```
+
+```{r}
+table <- table(data$scored.class, data$class)
+print(table)
+```
+The rows represent the predicted class, while the columns represent the actual class. 119 is the amount of True Positives. 30 is the amount of False Negatives. 5 is the number of False Positives. 27 is the amount of True Negatives.
+
+## Part 7
+Write a function that takes the dataset as a dataframe, with actual and predicted classifications identified, and returns the specificity of the predictions.
+
+Note. Specificity = (True Negatives)/(True Negatives + False Positives)
+
+```{r}
+specificity_func <- function(table) {
+  true_positives <- table[1,1]
+  false_negatives <- table[1,2]
+  false_positives <- table[2,1]
+  true_negatives <- table[2,2]
+  
+  specificity <- (true_negatives)/(true_negatives + false_positives)
+  return(specificity)
+}
+```
+
+Calculate specificity.
+
+```{r}
+specificity_func(table)
+```
+Our model has a specificity of 0.84375.
+
+## Part 8
+Write a function that takes the dataset as a dataframe, with actual and predicted classifications identified, and returns the F1 score.
+
+Note. F1 = (2 x Precision x Sensitivity)/(Precision + Sensitivity)
+```{r}
+f_one_func <- function(table) {
+  true_positives <- table[1,1]
+  false_negatives <- table[1,2]
+  false_positives <- table[2,1]
+  true_negatives <- table[2,2]
+  
+  sensitivity <- true_positives/(true_positives + false_negatives)
+  
+  precision <- true_positives/(true_positives + false_positives)
+  
+  f_one <- (2 * precision * sensitivity)/(precision + sensitivity)
+  return(f_one)
+}
+```
+
+Calculate F1.
+```{r}
+f_one_func(table)
+```
+Our model has an f1 of 0.8717949.
+
+## Part 9
+Before we move on, let's consider the bounds of F1.
+
+Well, to begin we must note that the F1 score uses the model's sensitivity score and the model's precision score. 
+Let's first examine the precision score. 
+$Precision=(True Positives)/(True Positives + False Positives)$
+We cannot have a negative amount of false positives. Thus, our denomenator will either be equal to the amount of true positives(the case where we have 0 false positives), or our denomenator will be larger than the numerator. Therefore, this number will be bound between [0,1].
+Now let's examine the sensitivity score.
+$Sensitivity = (True Positives)/(True Positives + False Negatives)$
+Similarly, the denomenator will either be equal to the numerator, or it will be larger than the numerator. Therefore, this number is also bound between [0,1].
+Finally, since we are essentially just multiplying by fractions less than 1, our F1 will also be bound between [0,1].
+
+## Part 10
+Write a function that generates an ROC curve from a dataset with a true classification column and a probability column.
+Your function should return a list that includes the plot of ROC curve and a vector that contains the area under the curve.
+```{r}
+roc_curve_func <- function(class, probability_score){
+  class <- class[order(probability_score)]
+  df <- data.frame(tpr=cumsum(class)/sum(class), fpr=cumsum(!class)/sum(!class), class)
+  
+  results <- list(df)
+  return(results)
+  
+  ggplot(results, aes(tpr, fpr))+
+    geom_line()
+}
+```
+
+```{r}
+roc_curve_func(data$class, data$scored.probability)
+```
+
